@@ -1,0 +1,96 @@
+#rkv_rss_validator {}
+
+#rkv_rss_validator p {
+	margin: 0 0 0.5em 0;
+}
+
+#rkv_rss_validator .validator_results {
+	padding:10px 0;
+	overflow: hidden;
+}
+
+#rkv_rss_validator ul {
+	float: left;
+	margin: 0;
+}
+
+#rkv_rss_validator ul li {
+	margin: 0 0 0.7em;
+}
+
+#rkv_rss_validator ul.titles {
+	font-weight: 300;
+	text-align: right;
+	padding: 0 10px 0 0;
+	font-style: italic;
+	font-size: 15px;
+	line-height: 18px;
+}
+
+#rkv_rss_validator ul.feed_data {
+	font-size: 15px;
+	line-height: 18px;
+	font-weight: 700;
+}
+
+
+#rkv_rss_validator ul.feed_data li span.clean {
+	color: #339900;
+}
+
+#rkv_rss_validator ul.feed_data li span.error {
+	color:#990000;
+}
+
+#rkv_rss_validator ul.feed_data li span.warning {
+	color:#ff6633;
+}
+
+span.valid_item {
+	text-indent: -9999px;
+	height:16px;
+	width: 16px;
+	display: block;
+	background: url(../img/meta-yes.png) no-repeat 0 0;
+	float: right;
+	margin: 0 0 0 1em;
+}
+
+input.show_detail {
+	text-indent: -9999px;
+	height:16px;
+	width: 16px;
+	display: block;
+	background: url(../img/icon-question.png) no-repeat 0 0;
+	float: right;
+	margin: 0 0 0 1em;
+	cursor: pointer;
+	border: none;
+}
+
+input.show_detail:hover {
+	background-position: 0 -16px;
+}
+
+/* issues and errors */
+
+div.issue_details {
+	clear: both;
+	padding: 0.5em;
+	margin: 0.5em;
+}
+
+div.error_details {
+	border:1px dotted #990000;
+	background: #ffcccc;
+}
+
+div.warning_details {
+	border:1px dotted #ff6633;
+	background: #ffcc99;
+}
+
+
+div.clearall {
+	clear: both;
+}
