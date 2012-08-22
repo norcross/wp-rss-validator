@@ -1,23 +1,28 @@
-#rkv_rss_validator {}
+/* tell me I'm pretty*/
 
+#rss_post_display,
 #rkv_rss_validator p {
 	margin: 0 0 0.5em 0;
 }
 
+#rss_post_display .validator_results,
 #rkv_rss_validator .validator_results {
 	padding:10px 0;
 	overflow: hidden;
 }
 
+#rss_post_display ul,
 #rkv_rss_validator ul {
 	float: left;
 	margin: 0;
 }
 
+#rss_post_display ul li,
 #rkv_rss_validator ul li {
 	margin: 0 0 0.7em;
 }
 
+#rss_post_display ul.titles,
 #rkv_rss_validator ul.titles {
 	font-weight: 300;
 	text-align: right;
@@ -27,21 +32,24 @@
 	line-height: 18px;
 }
 
+#rss_post_display ul.feed_data,
 #rkv_rss_validator ul.feed_data {
 	font-size: 15px;
 	line-height: 18px;
 	font-weight: 700;
 }
 
-
+#rss_post_display ul.feed_data li span.clean,
 #rkv_rss_validator ul.feed_data li span.clean {
 	color: #339900;
 }
 
+#rss_post_display ul.feed_data li span.error,
 #rkv_rss_validator ul.feed_data li span.error {
 	color:#990000;
 }
 
+#rss_post_display ul.feed_data li span.warning,
 #rkv_rss_validator ul.feed_data li span.warning {
 	color:#ff6633;
 }

@@ -3,7 +3,7 @@
 Plugin Name: RSS Validator
 Plugin URI: http://andrewnorcross.com/plugins/
 Description: Checks your RSS feed against the W3 RSS validator for errors
-Version: 1.0
+Version: 1.1
 Author: Andrew Norcross
 Author URI: http://andrewnorcross.com
 
@@ -42,8 +42,9 @@ class RSSValidator
 	 * @return RSSValidator
 	 */
 	private function __construct() {
-		add_action ( 'admin_enqueue_scripts',	array(&$this, 'scripts_styles'	), 10);
-		add_action ( 'wp_dashboard_setup',		array(&$this, 'add_dashboard' 	));
+		add_action ( 'admin_enqueue_scripts',	array(&$this, 'scripts_styles'	), 10	 );
+		add_action ( 'wp_dashboard_setup',		array(&$this, 'add_dashboard' 	)		 );
+		add_action ( 'do_meta_boxes',			array(&$this, 'post_metabox'	), 10, 2 );
 
 	}
 
@@ -66,13 +67,20 @@ class RSSValidator
 	 * @since 1.0
 	 */
 
-	public function scripts_styles() {
-		
+	public function scripts_styles($hook) {
+
+		// for post editor
+		if ( $hook == 'post-new.php' || $hook == 'post.php' ) :
+			wp_enqueue_style( 'validator-style', plugins_url('/lib/css/rss-validator.css', __FILE__), array(), null, 'all' );
+			wp_enqueue_script( 'validator-init', plugins_url('/lib/js/validator.init.js', __FILE__) , array('jquery'), null, true );
+		endif;
+
+		// for dashboard
 		$current_screen = get_current_screen();
-		if ( 'dashboard' == $current_screen->base ) {
-			wp_enqueue_style( 'validator-style', plugins_url('/lib/css/rss-validator.css', __FILE__) );
-			wp_enqueue_script( 'ap-main-ajax', plugins_url('/lib/js/validator.init.js', __FILE__) , array('jquery'), null, true );
-		}
+		if ( 'dashboard' == $current_screen->base ) :
+			wp_enqueue_style( 'validator-style', plugins_url('/lib/css/rss-validator.css', __FILE__), array(), null, 'all' );
+			wp_enqueue_script( 'validator-init', plugins_url('/lib/js/validator.init.js', __FILE__) , array('jquery'), null, true );
+		endif;
 
 	}
 
@@ -82,11 +90,27 @@ class RSSValidator
 	 * @return RSSValidator
 	 */
 
-
     public function add_dashboard() {
         wp_add_dashboard_widget('rkv_rss_validator', 'RSS Feed Validation', array( &$this, 'rss_validation_widget' ));
     }
 
+	/**
+	 * Call single post widget
+	 *
+	 * @return RSSValidator
+	 */
+
+	public function post_metabox($page, $context ) {
+		
+		$args = array(
+			'public'   => true
+		); 
+		
+		$types = get_post_types($args);
+    	
+		if ( in_array( $page,  $types ) && 'side' == $context )
+			add_meta_box('rss_post_display', __('RSS Validator'), array(&$this, 'rss_post_display'), $page, $context, 'high');
+	}
 
 	/**
 	 * Build out dashboard widget
@@ -99,10 +123,10 @@ class RSSValidator
 		
 		// display actual feed URL
 		$feed = get_bloginfo('rss2_url');
-		echo '<p><strong>Your RSS feed</strong>: <em>'.$feed.'</em></p>';
+		echo '<p><strong>Your main RSS feed</strong>: <em>'.$feed.'</em></p>';
 
 		// run the online validator
-		$check = $this->check_rss();
+		$check = $this->check_rss($feed);
 
 		if(isset($check['success']) && $check['success'] == false ) {
 			echo $check['errmsg'];
@@ -141,7 +165,7 @@ class RSSValidator
 
 		// show optional error messages
 		if(isset($check['error_list']) && !empty($check['error_list'][0]) ) {
-			echo '<div class="issue_details error_details" rel="errors" style="display:none">';
+			echo '<div class="issue_details error_details" name="errors" style="display:none">';
 
 			$errors = $check['error_list'][0];				
 			foreach ( $errors as $error ) :
@@ -153,7 +177,7 @@ class RSSValidator
 		
 			endforeach;
 
-			echo $this->check_link();
+			echo $this->check_link($feed);
 
 			echo '</div>';
 		}
@@ -172,7 +196,7 @@ class RSSValidator
 				
 			endforeach;
 			
-			echo $this->check_link();				
+			echo $this->check_link($feed);				
 			
 			echo '</div>';
 		}		
@@ -182,14 +206,108 @@ class RSSValidator
 	}
 
 	/**
+	 * Build single post widget
+	 *
+	 * @return RSSValidator
+	 */
+
+
+	public function rss_post_display() {
+	
+		// get feed URL
+		global $post;
+		$type = get_post_type_object($post->post_type);
+		$name = $type->labels->singular_name;
+
+		$feed = get_permalink($post->ID).'feed/';
+
+		echo '<p><strong>This '.$name.' RSS feed</strong><br /><em>'.$feed.'</em></p>';
+
+		// run the online validator
+		$check = $this->check_rss($feed);
+
+		if(isset($check['success']) && $check['success'] == false ) {
+			echo $check['errmsg'];
+			return;
+		}
+
+		// break out data
+
+		// OK, looks like things went OK. let's see what we have
+		echo '<div class="validator_results">';
+		
+			// set up headers of the display
+			echo '<ul class="titles">';
+				echo '<li class="status">Feed Status:</li>';
+				echo '<li class="errors">Errors:</li>';
+				echo '<li class="warnings">Warnings:</li>';
+			echo '</ul>';	
+
+			echo '<ul class="feed_data">';
+			
+			if(isset($check['validity']) ) {
+				$validity = ($check['validity'][0] == 'true' ? 'Valid' : 'Invalid');
+				echo '<li class="status"><span class="val">'.$validity.'</span></li>';
+			}
+
+			if(isset($check['error_count']))
+				echo '<li class="error_count"><span class="val">'.$check['error_count'][0].'</span></li>';
+
+			if(isset($check['warn_count']))
+				echo '<li class="warn_count"><span class="val">'.$check['warn_count'][0].'</span></li>';
+			
+			echo '</ul>';
+		
+		
+		echo '</div>';
+
+		// show optional error messages
+		if(isset($check['error_list']) && !empty($check['error_list'][0]) ) {
+			echo '<div class="issue_details error_details" name="errors" style="display:none">';
+
+			$errors = $check['error_list'][0];				
+			foreach ( $errors as $error ) :
+				// get variables for each warning
+				$line = $error->line;
+				$text = $error->text;
+
+				echo '<p><strong>Line '.$line.':</strong> '.$text.'</p>';
+		
+			endforeach;
+
+			echo $this->check_link($feed);
+
+			echo '</div>';
+		}
+			
+		// show optional warning messages
+		if(isset($check['warn_list']) && !empty($check['warn_list'][0]) ) {
+			echo '<div class="issue_details warning_details" name="warnings" style="display:none">';
+
+			$warnings = $check['warn_list'][0];				
+			foreach ( $warnings as $warning ) :
+				// get variables for each warning
+				$line = $warning->line;
+				$text = $warning->text;
+				
+				echo '<p><strong>Line '.$line.':</strong> '.$text.'</p>';
+				
+			endforeach;
+			
+			echo $this->check_link($feed);				
+			
+			echo '</div>';
+		}	
+	}
+
+	/**
 	 * Check RSS feed on W3 API
 	 *
 	 * @return RSSValidator
 	 */
 
-	public function check_rss () {
+	public function check_rss ($feed) {
 
-		$feed		= get_bloginfo('rss2_url');
 //		$feed		= 'http://restlesslikeme.com/feed/';
 
 		$request	= new WP_Http;
@@ -234,12 +352,8 @@ class RSSValidator
 	 * @return RSSValidator
 	 */
 
-	public function check_link () {
+	public function check_link ($feed) {
 	
-		// set varibles
-		$feed = get_bloginfo('rss2_url');
-//		$feed		= 'http://restlesslikeme.com/feed/';
-
 		$checklink = '<p><a href="http://feed1.w3.org/check.cgi?url='.urlencode($feed).'" target="_blank" title="See complete details on W3 Validator site">See complete details on W3 Validator site</a></p>';
 
 		return $checklink;
